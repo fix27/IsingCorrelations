@@ -229,3 +229,6 @@ fabric.properties
 
 # Results dir
 output*
+
+# idea
+.idea*
