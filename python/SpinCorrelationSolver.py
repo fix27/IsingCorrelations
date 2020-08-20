@@ -4,9 +4,10 @@ from collections import deque
 from typing import List, Optional
 
 import netket as nk
-from netket.operator.spin import sigmaz
 import numpy as np
 import pandas as pd
+from mpi4py import MPI
+from netket.operator.spin import sigmaz
 from tqdm import tqdm
 
 
@@ -22,9 +23,14 @@ class SpinCorrelationSolver(ABC):
         raise NotImplementedError()
 
     def reset(self):
+        comm = MPI.COMM_WORLD
+        rank = comm.Get_rank()
         self._set_graph()
-        sys.stdout.write("Graph one the {:d} vertices.\n".format(self.graph.n_sites))
-        sys.stdout.flush()
+        if rank == 0:
+            sys.stdout.write(
+                "Graph one the {:d} vertices.\n".format(self.graph.n_sites)
+            )
+            sys.stdout.flush()
         self.n_spins = self.graph.n_sites
         self.hilbert = nk.hilbert.Spin(graph=self.graph, s=0.5)
         self.machine = nk.machine.RbmSpin(hilbert=self.hilbert, alpha=3)
@@ -48,9 +54,10 @@ class SpinCorrelationSolver(ABC):
             ),
         )
 
-        sys.stdout.write(self.vmc.info())
-        sys.stdout.write("/n")
-        sys.stdout.flush()
+        if rank == 0:
+            sys.stdout.write(self.vmc.info())
+            sys.stdout.write("\n")
+            sys.stdout.flush()
 
         self.corr_operators = {}
 
@@ -67,6 +74,9 @@ class SpinCorrelationSolver(ABC):
         ).eigenvalues[0]
 
     def solve(self, n_iter: int = 800) -> None:
+        comm = MPI.COMM_WORLD
+        rank = comm.Get_rank()
+
         step = max([1, n_iter // 5])
         early_stopping = 5
         iterator = self.vmc.iter(n_steps=n_iter, step=step)
@@ -86,10 +96,11 @@ class SpinCorrelationSolver(ABC):
             e = np.real(exp.mean)
             var = np.real(exp.variance)
 
-            sys.stdout.write(
-                "\tStep: {:d}\tEnergy: {:.4f}\tVariance: {:.4f}\n".format(i, e, var)
-            )
-            sys.stdout.flush()
+            if rank == 0:
+                sys.stdout.write(
+                    "\tStep: {:d}\tEnergy: {:.4f}\tVariance: {:.4f}\n".format(i, e, var)
+                )
+                sys.stdout.flush()
             energies.append(e)
             variances.append(var)
 
@@ -102,12 +113,13 @@ class SpinCorrelationSolver(ABC):
             correlations.append(self._compute_correlations())
 
             if zero_steps >= early_stopping:
-                sys.stdout.write(
-                    "{:d} rounds with zero variance reached. Stop the process.\n".format(
-                        early_stopping
+                if rank == 0:
+                    sys.stdout.write(
+                        "{:d} rounds with zero variance reached. Stop the process.\n".format(
+                            early_stopping
+                        )
                     )
-                )
-                sys.stdout.flush()
+                    sys.stdout.flush()
                 break
 
         self.report = pd.DataFrame(

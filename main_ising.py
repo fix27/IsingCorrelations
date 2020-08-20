@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Optional
 
 import matplotlib.pylab as plt
+from mpi4py import MPI
 import numpy as np
 
 from python import IsingCorrelationsSolver
@@ -27,10 +28,14 @@ if __name__ == "__main__":
     else:
         prefix = Path(__file__).parent.joinpath(args.prefix)
 
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
     solver = IsingCorrelationsSolver(n_spins=args.spins, h=args.Hconst, j=args.Jconst)
 
-    prefix.mkdir(parents=True, exist_ok=True)
-    sys.stdout.write("Report path: {:s}".format(str(prefix)))
+    if rank == 0:
+        prefix.mkdir(parents=True, exist_ok=True)
+        sys.stdout.write("Report path: {:s}\n".format(str(prefix)))
+        sys.stdout.flush()
 
     exact_prefix = prefix.joinpath("exact")
     exact_prefix.mkdir(parents=True, exist_ok=True)
@@ -76,6 +81,8 @@ if __name__ == "__main__":
         )
         plt.close(f)
 
-    sys.stdout.write("Done.")
+    if rank == 0:
+        sys.stdout.write("Done.\n")
+        sys.stdout.flush()
 
     sys.exit(0)
