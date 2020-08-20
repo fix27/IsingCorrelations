@@ -23,7 +23,8 @@ class SpinCorrelationSolver(ABC):
 
     def reset(self):
         self._set_graph()
-        sys.stdout.write("Graph one the {:d} vertices.".format(self.graph.n_sites))
+        sys.stdout.write("Graph one the {:d} vertices.\n".format(self.graph.n_sites))
+        sys.stdout.flush()
         self.n_spins = self.graph.n_sites
         self.hilbert = nk.hilbert.Spin(graph=self.graph, s=0.5)
         self.machine = nk.machine.RbmSpin(hilbert=self.hilbert, alpha=3)
@@ -48,6 +49,8 @@ class SpinCorrelationSolver(ABC):
         )
 
         sys.stdout.write(self.vmc.info())
+        sys.stdout.write("/n")
+        sys.stdout.flush()
 
         self.corr_operators = {}
 
@@ -84,8 +87,9 @@ class SpinCorrelationSolver(ABC):
             var = np.real(exp.variance)
 
             sys.stdout.write(
-                "\tStep: {:d}\tEnergy: {:.4f}\tVariance: {:.4f}".format(i, e, var)
+                "\tStep: {:d}\tEnergy: {:.4f}\tVariance: {:.4f}\n".format(i, e, var)
             )
+            sys.stdout.flush()
             energies.append(e)
             variances.append(var)
 
@@ -99,10 +103,11 @@ class SpinCorrelationSolver(ABC):
 
             if zero_steps >= early_stopping:
                 sys.stdout.write(
-                    "{:d} rounds with zero variance reached. Stop the process.".format(
+                    "{:d} rounds with zero variance reached. Stop the process.\n".format(
                         early_stopping
                     )
                 )
+                sys.stdout.flush()
                 break
 
         self.report = pd.DataFrame(
