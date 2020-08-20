@@ -20,7 +20,9 @@ if __name__ == "__main__":
 
     if args.prefix == "":
         prefix = Path(__file__).parent.joinpath(
-            "output_spins_{:d}_h_{:.2E}_j_{:.2E}".format(args.spins, args.Hconst, args.Jconst)
+            "output_spins_{:d}_h_{:.2E}_j_{:.2E}".format(
+                args.spins, args.Hconst, args.Jconst
+            )
         )
     else:
         prefix = Path(__file__).parent.joinpath(args.prefix)
@@ -39,8 +41,7 @@ if __name__ == "__main__":
     solver.solve()
 
     solver.get_report().to_csv(
-        str(prefix.joinpath("main_report.csv").absolute()),
-        index=False
+        str(prefix.joinpath("main_report.csv").absolute()), index=False
     )
 
     corr_prefix = prefix.joinpath("correlations")
@@ -50,7 +51,7 @@ if __name__ == "__main__":
         np.savetxt(
             fname=str(corr_prefix.joinpath("corr_step_{:d}.txt".format(i)).absolute()),
             fmt="%.4f",
-            X=corr_mat
+            X=corr_mat,
         )
 
         f: plt.Figure = plt.figure(figsize=(6, 6))
@@ -61,11 +62,18 @@ if __name__ == "__main__":
         for k in range(args.spins):
             for j in range(args.spins):
                 ax.text(
-                    j, k, "{:.2f}".format(corr_mat[k, j]),
-                    ha="center", va="center", color="w"
+                    j,
+                    k,
+                    "{:.2f}".format(corr_mat[k, j]),
+                    ha="center",
+                    va="center",
+                    color="w",
                 )
 
-        f.savefig(str(corr_prefix.joinpath("corr_plot_step_{:d}.png".format(i)).absolute()), dpi=150)
+        f.savefig(
+            str(corr_prefix.joinpath("corr_plot_step_{:d}.png".format(i)).absolute()),
+            dpi=150,
+        )
         plt.close(f)
 
     sys.stdout.write("Done.")

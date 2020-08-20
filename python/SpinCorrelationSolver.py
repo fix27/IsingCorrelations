@@ -4,6 +4,7 @@ from collections import deque
 from typing import List, Optional
 
 import netket as nk
+from netket.operator.spin import sigmaz
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -13,20 +14,20 @@ class SpinCorrelationSolver(ABC):
     @abstractmethod
     def _set_graph(self):
         self.graph: Optional[nk.graph.Graph] = None
-        raise NotImplemented()
+        raise NotImplementedError()
 
     @abstractmethod
     def _set_operator(self):
         self.hamiltonian: Optional[nk.operator.GraphOperator] = None
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def reset(self):
         self._set_graph()
         sys.stdout.write("Graph one the {:d} vertices.".format(self.graph.n_sites))
         self.n_spins = self.graph.n_sites
         self.hilbert = nk.hilbert.Spin(graph=self.graph, s=0.5)
-        self.machine = nk.machine.RbmSpin(hilbert=self.hilbert, alpha=4)
-        self.machine.init_random_parameters(seed=42, sigma=1.0e-1)
+        self.machine = nk.machine.RbmSpin(hilbert=self.hilbert, alpha=3)
+        self.machine.init_random_parameters(seed=42, sigma=1.0e-2)
         self.sampler = nk.sampler.MetropolisExchange(machine=self.machine)
         self._set_operator()
         self.optimizer = nk.optimizer.RmsProp()
@@ -37,45 +38,32 @@ class SpinCorrelationSolver(ABC):
             hamiltonian=self.hamiltonian,
             sampler=self.sampler,
             optimizer=self.optimizer,
-            n_samples=max([1000, self.n_spins * 50]),
+            n_samples=max([1500, self.n_spins * 50]),
             sr=nk.variational._SR(
                 lsq_solver="LLT",
                 diag_shift=1.0e-2,
                 use_iterative=not use_cholesky,
                 is_holomorphic=self.sampler.machine.is_holomorphic,
-            )
+            ),
         )
 
         sys.stdout.write(self.vmc.info())
-
-        sz_sz = [
-            [1, 0, 0, 0],
-            [0, -1, 0, 0],
-            [0, 0, -1, 0],
-            [0, 0, 0, 1]
-        ]
 
         self.corr_operators = {}
 
         for i in range(self.n_spins):
             for j in range(self.n_spins):
-                self.corr_operators["{:d}-{:d}".format(i, j)] = nk.operator.LocalOperator(
-                    hilbert=self.hilbert,
-                    operator=sz_sz,
-                    acting_on=[i, j]
-                )
-
+                self.corr_operators["{:d}-{:d}".format(i, j)] = sigmaz(
+                    self.hilbert, i
+                ) * sigmaz(self.hilbert, j)
         self.correlations = []
 
     def exact(self) -> float:
         return nk.exact.lanczos_ed(
-            self.hamiltonian,
-            first_n=1,
-            compute_eigenvectors=False,
-            matrix_free=False
+            self.hamiltonian, first_n=1, compute_eigenvectors=False, matrix_free=False
         ).eigenvalues[0]
 
-    def solve(self, n_iter: int = 450) -> None:
+    def solve(self, n_iter: int = 800) -> None:
         step = max([1, n_iter // 5])
         early_stopping = 5
         iterator = self.vmc.iter(n_steps=n_iter, step=step)
@@ -95,9 +83,9 @@ class SpinCorrelationSolver(ABC):
             e = np.real(exp.mean)
             var = np.real(exp.variance)
 
-            sys.stdout.write("\tStep: {:d}\tEnergy: {:.4f}\tVariance: {:.4f}".format(
-                i, e, var
-            ))
+            sys.stdout.write(
+                "\tStep: {:d}\tEnergy: {:.4f}\tVariance: {:.4f}".format(i, e, var)
+            )
             energies.append(e)
             variances.append(var)
 
@@ -117,12 +105,14 @@ class SpinCorrelationSolver(ABC):
                 )
                 break
 
-        self.report = pd.DataFrame({
-            "steps": list(steps),
-            "energies": list(energies),
-            "variances": list(variances),
-            "acceptances": list(acceptances)
-        }).drop_duplicates()
+        self.report = pd.DataFrame(
+            {
+                "steps": list(steps),
+                "energies": list(energies),
+                "variances": list(variances),
+                "acceptances": list(acceptances),
+            }
+        ).drop_duplicates()
 
         self.correlations = list(correlations)
 

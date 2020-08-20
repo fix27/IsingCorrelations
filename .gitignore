@@ -228,7 +228,7 @@ fabric.properties
 .idea/caches/build_file_checksums.ser
 
 # Results dir
-output*
+#output*
 
 # idea
 .idea*
