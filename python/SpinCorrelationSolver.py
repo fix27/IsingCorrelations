@@ -1,4 +1,5 @@
 import sys
+import warnings
 from abc import ABC, abstractmethod
 from collections import deque
 from typing import List, Optional
@@ -9,6 +10,8 @@ import pandas as pd
 from mpi4py import MPI
 from netket.operator.spin import sigmaz
 from tqdm import tqdm
+
+warnings.filterwarnings("ignore")
 
 
 class SpinCorrelationSolver(ABC):
@@ -35,7 +38,7 @@ class SpinCorrelationSolver(ABC):
         self.hilbert = nk.hilbert.Spin(graph=self.graph, s=0.5)
         self.machine = nk.machine.RbmSpin(hilbert=self.hilbert, alpha=3)
         self.machine.init_random_parameters(seed=42, sigma=1.0e-2)
-        self.sampler = nk.sampler.MetropolisExchange(machine=self.machine)
+        self.sampler = nk.sampler.MetropolisLocal(self.machine)
         self._set_operator()
         self.optimizer = nk.optimizer.RmsProp()
 
