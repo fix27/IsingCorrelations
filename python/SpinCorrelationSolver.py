@@ -73,6 +73,23 @@ class SpinCorrelationSolver(ABC):
             self.hamiltonian, first_n=1, compute_eigenvectors=False, matrix_free=False
         ).eigenvalues[0]
 
+    def exact_corr_mat(self) -> np.ndarray:
+        psi = nk.exact.lanczos_ed(
+            self.hamiltonian, first_n=1, compute_eigenvectors=True
+        ).eigenvectors[0]
+
+        psi /= np.linalg.norm(psi)
+
+        corr_mat = np.zeros((self.n_spins, self.n_spins), dtype=np.float32)
+        for i in range(self.n_spins):
+            for j in range(self.n_spins):
+                corr_mat[i, j] = np.vdot(
+                    psi,
+                    self.corr_operators["{:d}-{:d}".format(i, j)].to_sparse().dot(psi),
+                )
+
+        return corr_mat
+
     def solve(self, n_iter: int = 800) -> None:
         comm = MPI.COMM_WORLD
         rank = comm.Get_rank()
@@ -86,6 +103,7 @@ class SpinCorrelationSolver(ABC):
         variances = deque()
         acceptances = deque()
         correlations = deque()
+        correlations_variance = deque()
 
         zero_steps = 0
 
@@ -110,7 +128,10 @@ class SpinCorrelationSolver(ABC):
                 zero_steps = 0
 
             acceptances.append(self.sampler.acceptance)
-            correlations.append(self._compute_correlations())
+
+            corrs = self._compute_correlations()
+            correlations.append(corrs[0])
+            correlations_variance.append(corrs[1])
 
             if zero_steps >= early_stopping:
                 if rank == 0:
@@ -132,6 +153,7 @@ class SpinCorrelationSolver(ABC):
         ).drop_duplicates()
 
         self.correlations = list(correlations)
+        self.correlations_variance = list(correlations_variance)
 
     def get_report(self) -> pd.DataFrame:
         if self.report is None:
@@ -145,14 +167,22 @@ class SpinCorrelationSolver(ABC):
 
         return self.correlations
 
+    def get_correlations_variances(self) -> List[np.ndarray]:
+        if self.report is None:
+            raise ValueError("You must solve the problem first!")
+
+        return self.correlations_variance
+
     def _compute_correlations(self) -> np.ndarray:
         corrs = self.vmc.estimate(self.corr_operators)
         corr_mat = np.zeros(shape=(self.n_spins, self.n_spins), dtype=np.float64)
+        var_mat = np.zeros(shape=(self.n_spins, self.n_spins), dtype=np.float64)
         for i in range(self.n_spins):
             for j in range(self.n_spins):
                 corr_mat[i, j] = np.real(corrs["{:d}-{:d}".format(i, j)].mean)
+                var_mat[i, j] = np.real(corrs["{:d}-{:d}".format(i, j)].variance)
 
-        return corr_mat
+        return corr_mat, var_mat
 
     def get_sample(self) -> np.ndarray:
         if self.report is None:

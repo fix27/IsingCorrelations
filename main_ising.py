@@ -43,6 +43,29 @@ if __name__ == "__main__":
 
     exact_prefix.joinpath("ground_state.txt").write_text(str(exact_solution))
 
+    exact_corr_mat = solver.exact_corr_mat()
+    f: plt.Figure = plt.figure(figsize=(6, 6))
+    ax: plt.Axes = f.add_subplot()
+    ax.imshow(exact_corr_mat)
+    ax.set_xticks(np.arange(args.spins))
+    ax.set_yticks(np.arange(args.spins))
+    for k in range(args.spins):
+        for j in range(args.spins):
+            ax.text(
+                j,
+                k,
+                "{:.2f}".format(exact_corr_mat[k, j]),
+                ha="center",
+                va="center",
+                color="w",
+            )
+
+    f.savefig(
+        str(exact_prefix.joinpath("exact_corr_mat.png").absolute()),
+        dpi=150,
+    )
+    plt.close(f)
+
     solver.solve()
 
     solver.get_report().to_csv(
@@ -77,6 +100,39 @@ if __name__ == "__main__":
 
         f.savefig(
             str(corr_prefix.joinpath("corr_plot_step_{:d}.png".format(i)).absolute()),
+            dpi=150,
+        )
+        plt.close(f)
+
+    for i, corr_mat in enumerate(solver.get_correlations_variances()):
+        np.savetxt(
+            fname=str(
+                corr_prefix.joinpath("corr_var_step_{:d}.txt".format(i)).absolute()
+            ),
+            fmt="%.4f",
+            X=corr_mat,
+        )
+
+        f: plt.Figure = plt.figure(figsize=(6, 6))
+        ax: plt.Axes = f.add_subplot()
+        ax.imshow(corr_mat)
+        ax.set_xticks(np.arange(args.spins))
+        ax.set_yticks(np.arange(args.spins))
+        for k in range(args.spins):
+            for j in range(args.spins):
+                ax.text(
+                    j,
+                    k,
+                    "{:.2f}".format(corr_mat[k, j]),
+                    ha="center",
+                    va="center",
+                    color="w",
+                )
+
+        f.savefig(
+            str(
+                corr_prefix.joinpath("corr_var_plot_step_{:d}.png".format(i)).absolute()
+            ),
             dpi=150,
         )
         plt.close(f)
