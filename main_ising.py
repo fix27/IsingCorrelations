@@ -39,32 +39,32 @@ if __name__ == "__main__":
 
     exact_prefix = prefix.joinpath("exact")
     exact_prefix.mkdir(parents=True, exist_ok=True)
-    exact_solution = solver.exact()
+    if args.spins <= 20:
+        exact_solution = solver.exact()
+        exact_prefix.joinpath("ground_state.txt").write_text(str(exact_solution))
 
-    exact_prefix.joinpath("ground_state.txt").write_text(str(exact_solution))
+        exact_corr_mat = solver.exact_corr_mat()
+        f: plt.Figure = plt.figure(figsize=(6, 6))
+        ax: plt.Axes = f.add_subplot()
+        ax.imshow(exact_corr_mat)
+        ax.set_xticks(np.arange(args.spins))
+        ax.set_yticks(np.arange(args.spins))
+        for k in range(args.spins):
+            for j in range(args.spins):
+                ax.text(
+                    j,
+                    k,
+                    "{:.2f}".format(exact_corr_mat[k, j]),
+                    ha="center",
+                    va="center",
+                    color="w",
+                )
 
-    exact_corr_mat = solver.exact_corr_mat()
-    f: plt.Figure = plt.figure(figsize=(6, 6))
-    ax: plt.Axes = f.add_subplot()
-    ax.imshow(exact_corr_mat)
-    ax.set_xticks(np.arange(args.spins))
-    ax.set_yticks(np.arange(args.spins))
-    for k in range(args.spins):
-        for j in range(args.spins):
-            ax.text(
-                j,
-                k,
-                "{:.2f}".format(exact_corr_mat[k, j]),
-                ha="center",
-                va="center",
-                color="w",
-            )
-
-    f.savefig(
-        str(exact_prefix.joinpath("exact_corr_mat.png").absolute()),
-        dpi=150,
-    )
-    plt.close(f)
+        f.savefig(
+            str(exact_prefix.joinpath("exact_corr_mat.png").absolute()),
+            dpi=150,
+        )
+        plt.close(f)
 
     solver.solve()
 
