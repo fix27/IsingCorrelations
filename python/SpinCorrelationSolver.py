@@ -36,7 +36,7 @@ class SpinCorrelationSolver(ABC):
             sys.stdout.flush()
         self.n_spins = self.graph.n_sites
         self.hilbert = nk.hilbert.Spin(graph=self.graph, s=0.5)
-        self.machine = nk.machine.RbmSpin(hilbert=self.hilbert, alpha=2)
+        self.machine = nk.machine.RbmSpin(hilbert=self.hilbert, alpha=3)
         self.machine.init_random_parameters(seed=42, sigma=1.0e-2)
         self.sampler = nk.sampler.MetropolisLocal(self.machine)
         self._set_operator()
@@ -58,6 +58,7 @@ class SpinCorrelationSolver(ABC):
         )
 
         if rank == 0:
+            sys.stdout.write("RBM with {:d} params.\n".format(self.machine.n_par))
             sys.stdout.write(self.vmc.info())
             sys.stdout.write("\n")
             sys.stdout.flush()
