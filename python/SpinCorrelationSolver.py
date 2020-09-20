@@ -36,7 +36,7 @@ class SpinCorrelationSolver(ABC):
             sys.stdout.flush()
         self.n_spins = self.graph.n_sites
         self.hilbert = nk.hilbert.Spin(graph=self.graph, s=0.5)
-        self.machine = nk.machine.RbmSpin(hilbert=self.hilbert, alpha=3)
+        self.machine = nk.machine.RbmSpin(hilbert=self.hilbert, alpha=2)
         self.machine.init_random_parameters(seed=42, sigma=1.0e-2)
         self.sampler = nk.sampler.MetropolisLocal(self.machine)
         self._set_operator()
@@ -48,7 +48,7 @@ class SpinCorrelationSolver(ABC):
             hamiltonian=self.hamiltonian,
             sampler=self.sampler,
             optimizer=self.optimizer,
-            n_samples=max([1500, self.n_spins * 50]),
+            n_samples=max([1500, self.n_spins * 20]),
             sr=nk.variational._SR(
                 lsq_solver="LLT",
                 diag_shift=1.0e-2,
@@ -97,7 +97,7 @@ class SpinCorrelationSolver(ABC):
         comm = MPI.COMM_WORLD
         rank = comm.Get_rank()
 
-        step = max([1, n_iter // 5])
+        step = max([1, n_iter // 10])
         early_stopping = 5
         iterator = self.vmc.iter(n_steps=n_iter, step=step)
 
@@ -117,6 +117,10 @@ class SpinCorrelationSolver(ABC):
             e = np.real(exp.mean)
             var = np.real(exp.variance)
 
+            corrs = self._compute_correlations()
+            correlations.append(corrs[0])
+            correlations_variance.append(corrs[1])
+
             if rank == 0:
                 sys.stdout.write(
                     "\tStep: {:d}\tEnergy: {:.4f}\tVariance: {:.4f}\n".format(i, e, var)
@@ -131,10 +135,6 @@ class SpinCorrelationSolver(ABC):
                 zero_steps = 0
 
             acceptances.append(self.sampler.acceptance)
-
-            corrs = self._compute_correlations()
-            correlations.append(corrs[0])
-            correlations_variance.append(corrs[1])
 
             if zero_steps >= early_stopping:
                 if rank == 0:

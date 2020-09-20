@@ -36,8 +36,10 @@ if __name__ == "__main__":
         solver = IsingCorrelationsSolver(
             n_spins=args.spins, h=args.Hconst, j=args.Jconst
         )
-    else:
+    elif args.Ham == "heisenberg":
         solver = HeisenbergCorrelationSolver(n_spins=args.spins, j=args.Jconst)
+    else:
+        raise ValueError()
 
     if rank == 0:
         prefix.mkdir(parents=True, exist_ok=True)
@@ -46,7 +48,7 @@ if __name__ == "__main__":
 
     exact_prefix = prefix.joinpath("exact")
     exact_prefix.mkdir(parents=True, exist_ok=True)
-    if args.spins <= 20:
+    if args.spins <= 20 and args.Ham == "ising":
         exact_solution = solver.exact()
         exact_prefix.joinpath("ground_state.txt").write_text(str(exact_solution))
 

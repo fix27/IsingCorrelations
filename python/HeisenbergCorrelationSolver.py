@@ -3,14 +3,15 @@ from typing import Dict, List, Optional
 import netket as nk
 import numpy as np
 import pandas as pd
+from netket.operator.spin import sigmaz
 
 from python.SpinCorrelationSolver import SpinCorrelationSolver
 
 
 class HeisenbergCorrelationSolver(SpinCorrelationSolver):
     def __init__(self, n_spins: int, j: float) -> None:
-        self.n_spins: Optional[int] = n_spins
-        self.dim: int = int(np.sqrt(n_spins))
+        self.n_spins: Optional[int] = n_spins * n_spins
+        self.dim = n_spins
         self.j = j
 
         self.report: Optional[pd.DataFrame] = None
@@ -25,9 +26,16 @@ class HeisenbergCorrelationSolver(SpinCorrelationSolver):
         self.correlations: List[np.ndarray] = []
 
         self.reset()
+        self.corr_operators = {}
+
+        k = self.n_spins // 2
+        for i in range(self.n_spins):
+            self.corr_operators["{:d}-{:d}".format(k, i)] = sigmaz(
+                self.hilbert, k
+            ) * sigmaz(self.hilbert, i)
 
     def _set_graph(self):
-        self.graph = nk.graph.Hypercube(length=self.n_spins, n_dim=2, pbc=False)
+        self.graph = nk.graph.Hypercube(length=self.dim, n_dim=2, pbc=False)
 
     def _set_operator(self):
         self.hamiltonian = nk.operator.Heisenberg(self.hilbert, self.j, False)
@@ -35,19 +43,13 @@ class HeisenbergCorrelationSolver(SpinCorrelationSolver):
     def _compute_correlations(self):
         k = self.n_spins // 2
 
-        corrs = self.vmc.estimate(
-            {
-                k: v
-                for k, v in self.corr_operators.items()
-                if k.startswit("{:d}".format(k))
-            }
-        )
+        corrs = self.vmc.estimate(self.corr_operators)
 
         corr_mat = np.zeros(shape=self.n_spins, dtype=np.float64)
         var_mat = np.zeros(shape=self.n_spins, dtype=np.float64)
         for i in range(self.n_spins):
             corr_mat[i] = np.real(corrs["{:d}-{:d}".format(k, i)].mean)
-            corr_var[i] = np.real(corrs["{:d}-{:d}".format(k, i)].variance)
+            var_mat[i] = np.real(corrs["{:d}-{:d}".format(k, i)].variance)
 
         return corr_mat.reshape((self.dim, self.dim)), var_mat.reshape(
             (self.dim, self.dim)
