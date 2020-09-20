@@ -7,13 +7,14 @@ import matplotlib.pylab as plt
 from mpi4py import MPI
 import numpy as np
 
-from python import IsingCorrelationsSolver
+from python import IsingCorrelationsSolver, HeisenbergCorrelationSolver
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--spins", required=True, type=int)
     parser.add_argument("--Hconst", required=True, type=float)
     parser.add_argument("--Jconst", required=True, type=float)
+    parser.add_argument("--Ham", required=True, type=str)
     parser.add_argument("--prefix", required=False, default="", type=str)
 
     args = parser.parse_args()
@@ -21,8 +22,8 @@ if __name__ == "__main__":
 
     if args.prefix == "":
         prefix = Path(__file__).parent.joinpath(
-            "output_spins_{:d}_h_{:.2E}_j_{:.2E}".format(
-                args.spins, args.Hconst, args.Jconst
+            "output_{:s}_spins_{:d}_h_{:.2E}_j_{:.2E}".format(
+                args.Ham, args.spins, args.Hconst, args.Jconst
             )
         )
     else:
@@ -30,7 +31,13 @@ if __name__ == "__main__":
 
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
-    solver = IsingCorrelationsSolver(n_spins=args.spins, h=args.Hconst, j=args.Jconst)
+
+    if args.Ham == "ising":
+        solver = IsingCorrelationsSolver(
+            n_spins=args.spins, h=args.Hconst, j=args.Jconst
+        )
+    else:
+        solver = HeisenbergCorrelationSolver(n_spins=args.spins, j=args.Jconst)
 
     if rank == 0:
         prefix.mkdir(parents=True, exist_ok=True)

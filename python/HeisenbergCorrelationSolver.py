@@ -10,6 +10,7 @@ from python.SpinCorrelationSolver import SpinCorrelationSolver
 class HeisenbergCorrelationSolver(SpinCorrelationSolver):
     def __init__(self, n_spins: int, j: float) -> None:
         self.n_spins: Optional[int] = n_spins
+        self.dim: int = int(np.sqrt(n_spins))
         self.j = j
 
         self.report: Optional[pd.DataFrame] = None
@@ -30,3 +31,41 @@ class HeisenbergCorrelationSolver(SpinCorrelationSolver):
 
     def _set_operator(self):
         self.hamiltonian = nk.operator.Heisenberg(self.hilbert, self.j, False)
+
+    def _compute_correlations(self):
+        k = self.n_spins // 2
+
+        corrs = self.vmc.estimate(
+            {
+                k: v
+                for k, v in self.corr_operators.items()
+                if k.startswit("{:d}".format(k))
+            }
+        )
+
+        corr_mat = np.zeros(shape=self.n_spins, dtype=np.float64)
+        var_mat = np.zeros(shape=self.n_spins, dtype=np.float64)
+        for i in range(self.n_spins):
+            corr_mat[i] = np.real(corrs["{:d}-{:d}".format(k, i)].mean)
+            corr_var[i] = np.real(corrs["{:d}-{:d}".format(k, i)].variance)
+
+        return corr_mat.reshape((self.dim, self.dim)), var_mat.reshape(
+            (self.dim, self.dim)
+        )
+
+    def exact_corr_mat(self) -> np.ndarray:
+        psi = nk.exact.lanczos_ed(
+            self.hamiltonian, first_n=1, compute_eigenvectors=True
+        ).eigenvectors[0]
+
+        psi /= np.linalg.norm(psi)
+
+        k = self.n_spins // 2
+        corr_mat = np.zeros(self.n_spins, dtype=np.float32)
+        for i in range(self.n_spins):
+            corr_mat[i] = np.vdot(
+                psi,
+                self.corr_operators["{:d}-{:d}".format(k, i)].to_sparse().dot(psi),
+            )
+
+        return corr_mat.reshape((self.dim, self.dim))
