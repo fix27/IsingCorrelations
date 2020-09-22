@@ -48,7 +48,7 @@ class SpinCorrelationSolver(ABC):
             hamiltonian=self.hamiltonian,
             sampler=self.sampler,
             optimizer=self.optimizer,
-            n_samples=max([1500, self.n_spins * 20]),
+            n_samples=max([1500, self.n_spins * 50]),
             sr=nk.variational._SR(
                 lsq_solver="LLT",
                 diag_shift=1.0e-2,
@@ -98,7 +98,7 @@ class SpinCorrelationSolver(ABC):
         comm = MPI.COMM_WORLD
         rank = comm.Get_rank()
 
-        step = max([1, n_iter // 10])
+        step = max([1, n_iter // 5])
         early_stopping = 5
         iterator = self.vmc.iter(n_steps=n_iter, step=step)
 
