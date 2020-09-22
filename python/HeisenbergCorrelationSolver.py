@@ -27,11 +27,11 @@ class HeisenbergCorrelationSolver(SpinCorrelationSolver):
 
         self.reset()
         self.corr_operators = {}
+        self.k = self.n_spins // 2 + self.dim // 2
 
-        k = self.n_spins // 2
         for i in range(self.n_spins):
-            self.corr_operators["{:d}-{:d}".format(k, i)] = sigmaz(
-                self.hilbert, k
+            self.corr_operators["{:d}-{:d}".format(self.k, i)] = sigmaz(
+                self.hilbert, self.k
             ) * sigmaz(self.hilbert, i)
 
     def _set_graph(self):
@@ -41,15 +41,13 @@ class HeisenbergCorrelationSolver(SpinCorrelationSolver):
         self.hamiltonian = nk.operator.Heisenberg(self.hilbert, self.j, False)
 
     def _compute_correlations(self):
-        k = self.n_spins // 2
-
         corrs = self.vmc.estimate(self.corr_operators)
 
         corr_mat = np.zeros(shape=self.n_spins, dtype=np.float64)
         var_mat = np.zeros(shape=self.n_spins, dtype=np.float64)
         for i in range(self.n_spins):
-            corr_mat[i] = np.real(corrs["{:d}-{:d}".format(k, i)].mean)
-            var_mat[i] = np.real(corrs["{:d}-{:d}".format(k, i)].variance)
+            corr_mat[i] = np.real(corrs["{:d}-{:d}".format(self.k, i)].mean)
+            var_mat[i] = np.real(corrs["{:d}-{:d}".format(self.k, i)].variance)
 
         return corr_mat.reshape((self.dim, self.dim)), var_mat.reshape(
             (self.dim, self.dim)
