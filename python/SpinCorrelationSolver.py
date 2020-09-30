@@ -26,14 +26,6 @@ class SpinCorrelationSolver(ABC):
         self.hamiltonian: Optional[nk.operator.GraphOperator] = None
         raise NotImplementedError()
 
-    @property
-    def netfun(self) -> "Callable":
-        return self._netfun
-
-    @property
-    def initfun(self) -> "Callable":
-        return self._initfun
-
     def reset(self):
         comm = MPI.COMM_WORLD
         rank = comm.Get_rank()
@@ -44,11 +36,11 @@ class SpinCorrelationSolver(ABC):
             )
             sys.stdout.flush()
         self.n_spins = self.graph.n_sites
+        self.hilbert = nk.hilbert.Spin(graph=self.graph, s=0.5)
 
         self.machine = nk.machine.Jax(
-            hilbert=self.hilbert, module=(self.netfun, self.initfun), seed=42
+            hilbert=self.hilbert, module=(self._netfun, self._initfun), seed=42
         )
-        self.machine = nk.machine.RbmSpin(hilbert=self.hilbert, alpha=2)
         self.machine.init_random_parameters(seed=42, sigma=1.0e-2)
         self.sampler = nk.sampler.MetropolisLocal(self.machine)
         self._set_operator()
