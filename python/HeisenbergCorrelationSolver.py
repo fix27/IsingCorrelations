@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 from netket.operator.spin import sigmaz
 
+
+from python.JaxUtils import SumLayer, LogCoshLayer
 from python.SpinCorrelationSolver import SpinCorrelationSolver
 
 
@@ -15,19 +17,15 @@ class HeisenbergCorrelationSolver(SpinCorrelationSolver):
         self.dim = n_spins
         self.j = j
 
-        self._netfun, self._initfun = stax.serial(
-            stax.Dense(self.n_spins),
-            stax.Relu,
-            stax.Dense(self.n_spins),
-            stax.Relu,
-            stax.Dense(self.n_spins),
-            stax.Relu,
-            stax.Dense(10),
-            stax.Relu,
-        )
-
         self.report: Optional[pd.DataFrame] = None
-        self.machine: Optional[nk.machine.Machine] = None
+        self.machine: Optional[nk.machine.Machine] = nk.machine.FFNN(
+            nk.layer.FullyConnected(
+                input_size=self.n_spins, output_size=50, use_bias=True
+            ),
+            nk.layer.FullyConnected(input_size=50, output_size=50, use_bias=True),
+            nk.layer.Lncosh(input_size=50),
+            nk.layer.Sumotput(input_size=50),
+        )
         self.graph: Optional[nk.graph.Graph] = None
         self.hilbert: Optional[nk.hilbert.Hilbert] = None
         self.sampler: Optional[nk.sampler.MetropolisExchange] = None

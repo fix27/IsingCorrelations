@@ -37,10 +37,6 @@ class SpinCorrelationSolver(ABC):
             sys.stdout.flush()
         self.n_spins = self.graph.n_sites
         self.hilbert = nk.hilbert.Spin(graph=self.graph, s=0.5)
-
-        self.machine = nk.machine.Jax(
-            hilbert=self.hilbert, module=(self._netfun, self._initfun), seed=42
-        )
         self.machine.init_random_parameters(seed=42, sigma=1.0e-2)
         self.sampler = nk.sampler.MetropolisLocal(self.machine)
         self._set_operator()
