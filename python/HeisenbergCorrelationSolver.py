@@ -20,11 +20,11 @@ class HeisenbergCorrelationSolver(SpinCorrelationSolver):
         self.report: Optional[pd.DataFrame] = None
         self.layers = (
             nk.layer.FullyConnected(
-                input_size=self.n_spins, output_size=50, use_bias=True
+                input_size=self.n_spins, output_size=40, use_bias=True
             ),
-            nk.layer.FullyConnected(input_size=50, output_size=50, use_bias=True),
-            nk.layer.Lncosh(input_size=50),
-            nk.layer.SumOutput(input_size=50),
+            nk.layer.FullyConnected(input_size=40, output_size=30, use_bias=True),
+            nk.layer.Lncosh(input_size=30),
+            nk.layer.SumOutput(input_size=30),
         )
         self.graph: Optional[nk.graph.Graph] = None
         self.hilbert: Optional[nk.hilbert.Hilbert] = None
