@@ -49,7 +49,7 @@ class SpinCorrelationSolver(ABC):
             sampler=self.sampler,
             optimizer=self.optimizer,
             n_samples=max([2000, self.n_spins * 50]),
-            sr=nk.variational._SR(
+            sr=nk.optimizer.SR(
                 lsq_solver="LLT",
                 diag_shift=1.0e-2,
                 use_iterative=not use_cholesky,
@@ -94,7 +94,7 @@ class SpinCorrelationSolver(ABC):
 
         return corr_mat
 
-    def solve(self, n_iter: int = 2000) -> None:
+    def solve(self, n_iter: int = 3000) -> None:
         comm = MPI.COMM_WORLD
         rank = comm.Get_rank()
 
