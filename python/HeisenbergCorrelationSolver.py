@@ -18,7 +18,7 @@ class HeisenbergCorrelationSolver(SpinCorrelationSolver):
         self.j = j
 
         self.report: Optional[pd.DataFrame] = None
-        self.machine: Optional[nk.machine.Machine] = nk.machine.FFNN(
+        self.layers = (
             nk.layer.FullyConnected(
                 input_size=self.n_spins, output_size=50, use_bias=True
             ),
