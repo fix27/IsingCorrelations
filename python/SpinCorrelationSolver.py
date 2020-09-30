@@ -94,11 +94,11 @@ class SpinCorrelationSolver(ABC):
 
         return corr_mat
 
-    def solve(self, n_iter: int = 800) -> None:
+    def solve(self, n_iter: int = 1200) -> None:
         comm = MPI.COMM_WORLD
         rank = comm.Get_rank()
 
-        step = max([1, n_iter // 5])
+        step = max([1, n_iter // 10])
         early_stopping = 5
         iterator = self.vmc.iter(n_steps=n_iter, step=step)
 
