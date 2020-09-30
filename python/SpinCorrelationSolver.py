@@ -2,8 +2,9 @@ import sys
 import warnings
 from abc import ABC, abstractmethod
 from collections import deque
-from typing import List, Optional
+from typing import List, Optional, Callable
 
+from jax.experimental import stax
 import netket as nk
 import numpy as np
 import pandas as pd
@@ -25,6 +26,16 @@ class SpinCorrelationSolver(ABC):
         self.hamiltonian: Optional[nk.operator.GraphOperator] = None
         raise NotImplementedError()
 
+    @property
+    @abstractmethod
+    def netfun(self) -> "Callable":
+        raise self._netfun
+
+    @property
+    @abstractmethod
+    def initfun(self) -> "Callable":
+        raise self._initfun
+
     def reset(self):
         comm = MPI.COMM_WORLD
         rank = comm.Get_rank()
@@ -35,7 +46,10 @@ class SpinCorrelationSolver(ABC):
             )
             sys.stdout.flush()
         self.n_spins = self.graph.n_sites
-        self.hilbert = nk.hilbert.Spin(graph=self.graph, s=0.5)
+
+        self.machine = nk.machine.Jax(
+            hilbert=self.hilbert, module=(self.netfun, self.initfun), seed=42
+        )
         self.machine = nk.machine.RbmSpin(hilbert=self.hilbert, alpha=2)
         self.machine.init_random_parameters(seed=42, sigma=1.0e-2)
         self.sampler = nk.sampler.MetropolisLocal(self.machine)

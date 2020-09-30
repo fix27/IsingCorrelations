@@ -31,7 +31,6 @@ if __name__ == "__main__":
 
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
-
     if args.Ham == "ising":
         solver = IsingCorrelationsSolver(
             n_spins=args.spins, h=args.Hconst, j=args.Jconst

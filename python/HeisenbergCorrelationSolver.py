@@ -1,5 +1,6 @@
 from typing import Dict, List, Optional
 
+from jax.experimental import stax
 import netket as nk
 import numpy as np
 import pandas as pd
@@ -13,6 +14,17 @@ class HeisenbergCorrelationSolver(SpinCorrelationSolver):
         self.n_spins: Optional[int] = n_spins * n_spins
         self.dim = n_spins
         self.j = j
+
+        self._netfun, self._initfun = stax.serial(
+            stax.Dense(self.n_spins),
+            stax.Relu,
+            stax.Dense(self.n_spins),
+            stax.Relu,
+            stax.Dense(self.n_spins),
+            stax.Relu,
+            stax.Dense(10),
+            stax.Relu,
+        )
 
         self.report: Optional[pd.DataFrame] = None
         self.machine: Optional[nk.machine.Machine] = None
