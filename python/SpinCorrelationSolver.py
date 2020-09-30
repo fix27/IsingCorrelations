@@ -27,12 +27,10 @@ class SpinCorrelationSolver(ABC):
         raise NotImplementedError()
 
     @property
-    @abstractmethod
     def netfun(self) -> "Callable":
         raise self._netfun
 
     @property
-    @abstractmethod
     def initfun(self) -> "Callable":
         raise self._initfun
 
