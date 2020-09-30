@@ -48,7 +48,9 @@ if __name__ == "__main__":
 
     exact_prefix = prefix.joinpath("exact")
     exact_prefix.mkdir(parents=True, exist_ok=True)
-    if args.spins <= 20 and args.Ham == "ising":
+    if (args.spins <= 20 and args.Ham == "ising") or (
+        args.spins <= 5 and args.Ham == "heisenberg"
+    ):
         exact_solution = solver.exact()
         exact_prefix.joinpath("ground_state.txt").write_text(str(exact_solution))
 
