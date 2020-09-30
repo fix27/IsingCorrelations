@@ -28,11 +28,11 @@ class SpinCorrelationSolver(ABC):
 
     @property
     def netfun(self) -> "Callable":
-        raise self._netfun
+        return self._netfun
 
     @property
     def initfun(self) -> "Callable":
-        raise self._initfun
+        return self._initfun
 
     def reset(self):
         comm = MPI.COMM_WORLD
