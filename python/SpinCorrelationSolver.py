@@ -148,6 +148,15 @@ class SpinCorrelationSolver(ABC):
                     sys.stdout.flush()
                 break
 
+        exp = self.vmc.energy
+        steps.append(n_iter)
+        energies.append(np.real(exp.mean))
+        variances.append(np.real(exp.variance))
+        acceptances.append(self.sampler.acceptance)
+        final_coors = self._compute_correlations()
+        correlations.append(final_coors[0])
+        correlations_variance.append(final_coors[1])
+
         self.report = pd.DataFrame(
             {
                 "steps": list(steps),
