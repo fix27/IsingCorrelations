@@ -36,7 +36,7 @@ class SpinCorrelationSolver(ABC):
             sys.stdout.flush()
         self.n_spins = self.graph.n_sites
         self.hilbert = nk.hilbert.Spin(graph=self.graph, s=0.5)
-        self.machine = nk.machine.RbmSpin(hilbert=self.hilbert, alpha=4)
+        self.machine = nk.machine.RbmSpin(hilbert=self.hilbert, alpha=2)
         self.machine.init_random_parameters(seed=42, sigma=1.0e-2)
         self.sampler = nk.sampler.MetropolisLocal(self.machine)
         self._set_operator()
@@ -94,7 +94,7 @@ class SpinCorrelationSolver(ABC):
 
         return corr_mat
 
-    def solve(self, n_iter: int = 1500) -> None:
+    def solve(self, n_iter: int = 2000) -> None:
         comm = MPI.COMM_WORLD
         rank = comm.Get_rank()
 
