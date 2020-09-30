@@ -24,7 +24,7 @@ class HeisenbergCorrelationSolver(SpinCorrelationSolver):
             ),
             nk.layer.FullyConnected(input_size=50, output_size=50, use_bias=True),
             nk.layer.Lncosh(input_size=50),
-            nk.layer.SumOtput(input_size=50),
+            nk.layer.SumOutput(input_size=50),
         )
         self.graph: Optional[nk.graph.Graph] = None
         self.hilbert: Optional[nk.hilbert.Hilbert] = None
