@@ -60,12 +60,11 @@ class HeisenbergCorrelationSolver(SpinCorrelationSolver):
 
         psi /= np.linalg.norm(psi)
 
-        k = self.n_spins // 2
         corr_mat = np.zeros(self.n_spins, dtype=np.float32)
         for i in range(self.n_spins):
             corr_mat[i] = np.vdot(
                 psi,
-                self.corr_operators["{:d}-{:d}".format(k, i)].to_sparse().dot(psi),
+                self.corr_operators["{:d}-{:d}".format(self.k, i)].to_sparse().dot(psi),
             )
 
         return corr_mat.reshape((self.dim, self.dim))
