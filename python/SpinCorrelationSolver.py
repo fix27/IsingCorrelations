@@ -108,11 +108,7 @@ class SpinCorrelationSolver(ABC):
 
         return corr_mat
 
-<<<<<<< HEAD
-    def solve(self, n_iter: int = 3000) -> None:
-=======
     def solve(self, n_iter: int = 2500) -> None:
->>>>>>> f4b15a28664df1011f9b2992db28426934e3df34
         comm = MPI.COMM_WORLD
         rank = comm.Get_rank()
 
